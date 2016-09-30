@@ -29,7 +29,7 @@ public class TASolver
 		
 		this.sessions = i.getSessions()
 				         .stream()
-				         .filter(s -> as.canCover(s) && !bi.isForibidden(as, s))
+				         .filter(s -> as.canCover(s) && !bi.isForbidden(as, s))
 				         .collect(Collectors.toList());
 		
 		this.maxSols = maxSols;

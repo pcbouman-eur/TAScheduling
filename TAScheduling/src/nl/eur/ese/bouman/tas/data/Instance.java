@@ -11,6 +11,7 @@ public class Instance
 	private List<Assistant> assistants;
 	private List<Group> groups;
 	private SortedSet<Session> sessions;
+	private CostInformation ci;
 	
 	public Instance()
 	{
@@ -47,5 +48,10 @@ public class Instance
 	public List<Group> getGroups()
 	{
 		return Collections.unmodifiableList(groups);
+	}
+	
+	public CostInformation getCosts()
+	{
+		return ci;
 	}
 }
