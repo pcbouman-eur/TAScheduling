@@ -1,5 +1,6 @@
 package nl.eur.ese.bouman.tas.data;
 
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -10,6 +11,34 @@ public interface CostInformation
 	
 	public boolean isRelevant(Assistant a, double cost);
 	
+	public default CostInformation derive(Map<Session,Double> sesDuals,
+			                              Map<Assistant,Double> aDuals)
+	{
+		CostInformation ci = this;
+		return new CostInformation()
+		{
+
+			@Override
+			public double getSameGroupCost(Group group, int repetitions)
+			{
+				return ci.getSameGroupCost(group, repetitions);
+			}
+
+			@Override
+			public double getShadowCosts(Session s)
+			{
+				return -sesDuals.getOrDefault(s, 0d) + ci.getShadowCosts(s);
+			}
+
+			@Override
+			public boolean isRelevant(Assistant a, double cost)
+			{
+				return cost > aDuals.getOrDefault(a, 0d)
+					&& ci.isRelevant(a, cost);
+			}
+			
+		};
+	}
 	
 	public static CostInformation getDefault()
 	{
@@ -40,5 +69,7 @@ public interface CostInformation
 			}
 		};
 	}
+	
+	
 	
 }
