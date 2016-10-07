@@ -13,46 +13,62 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
+import nl.eur.ese.bouman.tas.data.Slot;
+
 public class GoogleFormParser
 {
 	public static void main(String [] args) throws IOException
 	{
 		File f = new File("reactions-ict.csv");
 		Charset cs = Charset.forName("utf8");
+		
+		System.out.println(readFormData(f, cs));
+	}
+	
+	public static List<FormAssistant> readFormData(File f, Charset cs) throws IOException
+	{
+		return readFormData(f, cs, PreferenceMap.getDefault());
+	}
+	
+	public static List<FormAssistant> readFormData(File f, Charset cs, PreferenceMap pm) throws IOException
+	{
 		CSVFormat format = CSVFormat.DEFAULT.withFirstRecordAsHeader()
-				                            .withSkipHeaderRecord();
-		
-		CSVParser res = CSVParser.parse(f, cs, format);
-		Map<String, Integer> headers = res.getHeaderMap();
+                .withSkipHeaderRecord();
 
-		System.out.println(flexName(headers));
+		CSVParser csv = CSVParser.parse(f, cs, format);
+		Map<String, Integer> headers = csv.getHeaderMap();
 		
-		//System.out.println(flexRow(headers,"two"));
-		//System.out.println(flexRow(headers,"three"));
-		//System.out.println(flexRow(headers,"four"));
-		
-		System.out.println(flexSessions(headers));
-
 		SlotParser sp = new SlotParser();
-		InARowParser iar = new InARowParser(res.getHeaderMap());
-		GroupParser gp = new GroupParser(res.getHeaderMap());
-		for (CSVRecord record : res)
+		InARowParser iar = new InARowParser(headers);
+		GroupParser gp = new GroupParser(headers);
+		
+		Optional<String> nameOpt = flexName(headers);
+		Optional<String> flexSess = flexSessions(headers);
+		
+		if (!nameOpt.isPresent() || !flexSess.isPresent())
 		{
-			System.out.println(sp.parseSlots(record));
-			System.out.println(iar.parseInARow(record));
-			System.out.println(gp.parseGroups(record));
+			throw new IllegalArgumentException("Header of file does not contain a name"+
+						" column and/or a number of sessions column.");
 		}
 		
-		/*
-		for (CSVRecord record : res)
+		String nameCol = nameOpt.get();
+		String sessCol = flexSess.get();
+		
+		List<FormAssistant> result = new ArrayList<>();
+		
+		for (CSVRecord record : csv)
 		{
-			for (String col : headers.keySet())
-			{
-				String d = record.get(col);
-				System.out.println(""+col+" -> "+d+" ; "+Availability.flexParse(d));
-			}
+			String name = record.get(nameCol);
+			int sess = Integer.parseInt(record.get(sessCol));
+			Map<Slot, Preference> slots = sp.parseSlots(record);
+			Map<Integer, Preference> rows = iar.parseInARow(record);
+			Map<String, Preference> groups = gp.parseGroups(record);
+			
+			FormAssistant fa = new FormAssistant(name,sess,slots,rows,groups);
+			result.add(fa);
 		}
-		*/
+		
+		return result;
 	}
 		
 	public static Optional<String> flexName(Map<String,Integer> headers)
