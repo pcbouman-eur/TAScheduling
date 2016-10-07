@@ -24,6 +24,26 @@ public class GoogleFormParser
 		
 		CSVParser res = CSVParser.parse(f, cs, format);
 		Map<String, Integer> headers = res.getHeaderMap();
+
+		System.out.println(flexName(headers));
+		
+		//System.out.println(flexRow(headers,"two"));
+		//System.out.println(flexRow(headers,"three"));
+		//System.out.println(flexRow(headers,"four"));
+		
+		System.out.println(flexSessions(headers));
+
+		SlotParser sp = new SlotParser();
+		InARowParser iar = new InARowParser(res.getHeaderMap());
+		GroupParser gp = new GroupParser(res.getHeaderMap());
+		for (CSVRecord record : res)
+		{
+			System.out.println(sp.parseSlots(record));
+			System.out.println(iar.parseInARow(record));
+			System.out.println(gp.parseGroups(record));
+		}
+		
+		/*
 		for (CSVRecord record : res)
 		{
 			for (String col : headers.keySet())
@@ -32,8 +52,9 @@ public class GoogleFormParser
 				System.out.println(""+col+" -> "+d+" ; "+Availability.flexParse(d));
 			}
 		}
+		*/
 	}
-	
+		
 	public static Optional<String> flexName(Map<String,Integer> headers)
 	{
 		List<String> candidates = new ArrayList<>();
