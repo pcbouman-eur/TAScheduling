@@ -13,7 +13,7 @@ public abstract class Assistant
 	public abstract boolean canCover(Session s);
 	public abstract int maximumSessions(String category);
 	
-	public abstract double getSlotCost(Slot s);
+	public abstract double getSlotCost(Session s);
 	public abstract double getConsecutiveCost(int k);
 	public abstract double getCoverCost(String category, int number);
 	

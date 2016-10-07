@@ -132,7 +132,7 @@ public class AssistantSchedule implements Comparable<AssistantSchedule>
 				consecutive++;
 			}
 			// Slot costs
-			result += assistant.getSlotCost(s.getSlot());
+			result += assistant.getSlotCost(s);
 			result += ci.getShadowCosts(s);
 			
 			// Count group occurences

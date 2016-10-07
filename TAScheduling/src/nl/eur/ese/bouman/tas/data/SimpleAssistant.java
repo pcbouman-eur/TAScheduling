@@ -29,7 +29,7 @@ public class SimpleAssistant extends Assistant
 	}
 
 	@Override
-	public double getSlotCost(Slot s)
+	public double getSlotCost(Session s)
 	{
 		return 0;
 	}
