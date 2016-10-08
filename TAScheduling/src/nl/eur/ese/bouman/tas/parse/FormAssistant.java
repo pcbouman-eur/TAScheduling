@@ -2,8 +2,10 @@ package nl.eur.ese.bouman.tas.parse;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import nl.eur.ese.bouman.tas.data.Assistant;
+import nl.eur.ese.bouman.tas.data.Group;
 import nl.eur.ese.bouman.tas.data.Session;
 import nl.eur.ese.bouman.tas.data.Slot;
 
@@ -38,8 +40,9 @@ public class FormAssistant extends Assistant
 	@Override
 	public boolean canCover(Session s)
 	{
-		return slotPrefs.getOrDefault(s.getSlot(),Preference.UNAVAILABLE)
-				!= Preference.UNAVAILABLE;
+		return  slotPrefs.getOrDefault(s.getSlot(),Preference.UNAVAILABLE)
+				!= Preference.UNAVAILABLE
+		    &&  getGroupPref(s.getGroup()) != Preference.UNAVAILABLE;
 	}
 
 	@Override
@@ -52,9 +55,8 @@ public class FormAssistant extends Assistant
 	public double getSlotCost(Session s)
 	{
 		Slot slot = s.getSlot();
-		String group = s.getGroup().getName();
 		double slotCost = pm.getSlotCost(slotPrefs.getOrDefault(slot, Preference.NEUTRAL));
-		double groupCost = pm.getGroupCost(groups.getOrDefault(group, Preference.NEUTRAL));
+		double groupCost = pm.getGroupCost(getGroupPref(s.getGroup()));
 		return slotCost + groupCost;
 	}
 
@@ -68,6 +70,19 @@ public class FormAssistant extends Assistant
 	public double getCoverCost(String category, int number)
 	{
 		return 0;
+	}
+	
+	private Preference getGroupPref(Group g)
+	{
+		String name = g.getName().toLowerCase();
+		for (Entry<String,Preference> e : groups.entrySet())
+		{
+			if (name.contains(e.getKey().toLowerCase()))
+			{
+				return e.getValue();
+			}
+		}
+		return Preference.NEUTRAL;
 	}
 
 }

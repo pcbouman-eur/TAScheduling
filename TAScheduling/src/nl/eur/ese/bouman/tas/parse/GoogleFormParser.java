@@ -151,16 +151,18 @@ public class GoogleFormParser
 		Map<String, Integer> headers = csv.getHeaderMap();
 		
 		Optional<String> nameOpt = flexName(headers);
-		Optional<String> flexSess = flexSessions(headers);
+		Optional<String> sessOpt = flexSessions(headers);
+		Optional<String> verOpt = flexVersion(headers);
 		
-		if (!nameOpt.isPresent() || !flexSess.isPresent())
+		if (!nameOpt.isPresent() || !sessOpt.isPresent() || !verOpt.isPresent())
 		{
 			throw new IllegalArgumentException("Header of file does not contain a name"+
-						" column and/or a number of sessions column.");
+						" column, a number of sessions column and/or a version column.");
 		}
 		
 		String nameCol = nameOpt.get();
-		String sessCol = flexSess.get();
+		String sessCol = sessOpt.get();
+		String verCol = verOpt.get();
 		
 		List<FormAssistant> result = new ArrayList<>();
 		
@@ -168,9 +170,22 @@ public class GoogleFormParser
 		{
 			String name = record.get(nameCol);
 			int sess = Integer.parseInt(record.get(sessCol));
+			boolean ver = isDutch(record.get(verCol));
+			
 			Map<Slot, Preference> slots = sp.parseSlots(record);
 			Map<Integer, Preference> rows = iar.parseInARow(record);
 			Map<String, Preference> groups = gp.parseGroups(record);
+			
+			if (ver)
+			{
+				groups.put("IB", Preference.UNAVAILABLE);
+			}
+			else
+			{
+				groups.put("EC", Preference.UNAVAILABLE);
+				groups.put("FI", Preference.UNAVAILABLE);
+				groups.put("MD", Preference.UNAVAILABLE);
+			}
 			
 			FormAssistant fa = new FormAssistant(name,sess,slots,rows,groups);
 			result.add(fa);
@@ -178,7 +193,31 @@ public class GoogleFormParser
 		
 		return result;
 	}
-		
+	
+	public static boolean isDutch(String in)
+	{
+		return in.toLowerCase().contains("dutch");
+	}
+	
+	public static Optional<String> flexVersion(Map<String,Integer> headers)
+	{
+		List<String> candidates = new ArrayList<>();
+		for (String s : headers.keySet())
+		{
+			String lc = s.toLowerCase();
+			if (lc.contains("which version"))
+			{
+				candidates.add(s);
+			}
+		}
+		if (candidates.size() == 1)
+		{
+			return Optional.of(candidates.get(0));
+		}
+		return Optional.empty();
+	}
+
+	
 	public static Optional<String> flexName(Map<String,Integer> headers)
 	{
 		List<String> candidates = new ArrayList<>();
