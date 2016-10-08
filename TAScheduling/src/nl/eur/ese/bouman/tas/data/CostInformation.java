@@ -8,8 +8,10 @@ public interface CostInformation
 {
 	public double getSameGroupCost(Group group, int repetitions);
 	public double getShadowCosts(Session s);
+	public double getPenalty(Session s);
 	
 	public boolean isRelevant(Assistant a, double cost);
+	
 	
 	public default CostInformation derive(Map<Session,Double> sesDuals,
 			                              Map<Assistant,Double> aDuals)
@@ -37,17 +39,27 @@ public interface CostInformation
 					&& ci.isRelevant(a, cost);
 			}
 			
+			@Override
+			public double getPenalty(Session s)
+			{
+				return ci.getPenalty(s);
+			}
+			
 		};
 	}
 	
 	public static CostInformation getDefault()
 	{
-		return build( (g,i) -> i >= 2 ? -1d : 0d, s -> 0d, (a,d) -> true);
+		return build( (g,i) -> i >= 2 ? 1d : 0d,
+				          s -> 0d,
+				      (a,d) -> true,
+				          p -> -1000d);
 	}
 	
 	public static CostInformation build( BiFunction<Group,Integer,Double> sameGroup,
 			                             Function<Session,Double> shadow,
-			                             BiFunction<Assistant,Double,Boolean> relevant)
+			                             BiFunction<Assistant,Double,Boolean> relevant,
+			                             Function<Session,Double> penalty)
 	{
 		return new CostInformation()
 		{
@@ -66,6 +78,12 @@ public interface CostInformation
 			public boolean isRelevant(Assistant a, double cost)
 			{
 				return relevant.apply(a, cost);
+			}
+			
+			@Override
+			public double getPenalty(Session s)
+			{
+				return penalty.apply(s);
 			}
 		};
 	}

@@ -1,11 +1,15 @@
 package nl.eur.ese.bouman.tas.parse;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -13,17 +17,113 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
+import nl.eur.ese.bouman.tas.data.Assistant;
+import nl.eur.ese.bouman.tas.data.CostInformation;
+import nl.eur.ese.bouman.tas.data.Group;
+import nl.eur.ese.bouman.tas.data.Instance;
+import nl.eur.ese.bouman.tas.data.Session;
 import nl.eur.ese.bouman.tas.data.Slot;
+import nl.eur.ese.bouman.tas.solution.AssistantSchedule;
+import nl.eur.ese.bouman.tas.solver.BranchInformation;
+import nl.eur.ese.bouman.tas.solver.LPModel;
+import nl.eur.ese.bouman.tas.solver.TASolver;
 
 public class GoogleFormParser
 {
 	public static void main(String [] args) throws IOException
 	{
-		File f = new File("reactions-ict.csv");
+		File csvFile = new File("reactions-ict.csv");
 		Charset cs = Charset.forName("utf8");
 		
-		System.out.println(readFormData(f, cs));
+		File sessFile = new File("sessions.txt");
+		
+		Instance i = readInstance(csvFile, cs, sessFile);
+		System.out.println(i);
+		
+		CostInformation ci = CostInformation.getDefault();
+		BranchInformation bi = BranchInformation.getDefault();
+		
+		List<AssistantSchedule> schedules = new ArrayList<AssistantSchedule>();
+		
+		
+		for (Assistant a : i.getAssistants())
+		{
+			TASolver tas = new TASolver(i,a,bi);
+			tas.run();
+			System.out.println("For assistant "+a);
+			for (AssistantSchedule schedule : tas.getSchedules())
+			{
+				double cost = schedule.evaluateCosts(ci);
+				//if (cost >= 0)
+				//{
+					schedules.add(schedule);
+				//	System.out.println(cost+" : "+schedule);
+				//}
+			}
+			System.out.println();
+		}
+
+		System.out.println(schedules.size());
+		
+		LPModel lmp = new LPModel(i, schedules, bi);
+		System.out.println(lmp.solve());
+		System.out.println(lmp.getObjectiveValue());
+		for (Entry<AssistantSchedule,Double> e : lmp.getValues().entrySet())
+		{
+			if (e.getValue() > 0)
+			{
+				System.out.println(e.getValue()+" : "+e.getKey());
+			}
+		}
+		System.out.println();
+		System.out.println("Uncovered");
+		for (Entry<Session,Double> e : lmp.getUncovered().entrySet())
+		{
+			if (e.getValue() > 0)
+			{
+				System.out.println(e.getValue()+" : "+e.getKey());
+			}
+		}
 	}
+	
+	public static Instance readInstance(File csvFile, Charset csvCs, File sessFile)
+						throws IOException
+	{
+		return readInstance(csvFile, csvCs, sessFile, PreferenceMap.getDefault());
+	}
+	
+	public static Instance readInstance(File csvFile, Charset csvCs, File sessFile,
+			PreferenceMap pm) throws IOException
+	{
+		CSVFormat format = CSVFormat.DEFAULT.withFirstRecordAsHeader()
+                .withSkipHeaderRecord();
+
+		CSVParser csv = CSVParser.parse(csvFile, csvCs, format);
+		Map<String, Integer> headers = csv.getHeaderMap();
+		
+		SlotParser sp = new SlotParser();
+		InARowParser iar = new InARowParser(headers);
+		GroupParser gp = new GroupParser(headers);
+		
+		List<FormAssistant> assistants = readAssistants(csv, sp, iar, gp, pm);
+		List<Session> sessions = readSessions(sessFile, sp, gp);
+		Instance i = new Instance();
+		for (FormAssistant fa : assistants)
+		{
+			i.addAssistant(fa);
+		}
+		for (Session s : sessions)
+		{
+			i.addSession(s);
+		}
+		for (Group g : gp.getGroups())
+		{
+			i.addGroup(g);
+		}
+		return i;
+	}
+	
+	
 	
 	public static List<FormAssistant> readFormData(File f, Charset cs) throws IOException
 	{
@@ -41,6 +141,14 @@ public class GoogleFormParser
 		SlotParser sp = new SlotParser();
 		InARowParser iar = new InARowParser(headers);
 		GroupParser gp = new GroupParser(headers);
+		
+		return readAssistants(csv, sp, iar, gp, pm);
+	}
+	
+	public static List<FormAssistant> readAssistants(CSVParser csv, SlotParser sp,
+			InARowParser iar, GroupParser gp, PreferenceMap pm) throws IOException
+	{
+		Map<String, Integer> headers = csv.getHeaderMap();
 		
 		Optional<String> nameOpt = flexName(headers);
 		Optional<String> flexSess = flexSessions(headers);
@@ -119,5 +227,33 @@ public class GoogleFormParser
 		return Optional.empty();
 	}
 	
-	
+	public static List<Session> readSessions(File f, SlotParser sp, GroupParser gp)
+			throws FileNotFoundException, IOException
+	{
+		String currentCat = "";
+		Slot slot = null;
+		List<Session> sessions = new ArrayList<>();
+		try (BufferedReader br = new BufferedReader(new FileReader(f)))
+		{
+			String line;
+			while ((line = br.readLine()) != null)
+			{
+				if (line.startsWith("*"))
+				{
+					currentCat = line.substring(0).trim();
+				}
+				else if (line.startsWith(":"))
+				{
+					slot = sp.getSlot(line.substring(1).trim()).orElse(null);
+				}
+				else
+				{
+					Group group = gp.getGroup(line.trim());
+					Session s = new Session(group,slot,currentCat);
+					sessions.add(s);
+				}
+			}
+		}
+		return sessions;
+	}
 }

@@ -58,7 +58,7 @@ public class SolverTest
 		CostInformation ci = CostInformation.getDefault();
 		BranchInformation bi = BranchInformation.getDefault();
 		
-		TASolver solver = new TASolver(i, a1, ci, bi, 10);
+		TASolver solver = new TASolver(i, a1, bi, 10);
 		solver.run();
 		List<AssistantSchedule> solution = solver.getSchedules();
 		System.out.println(solution);

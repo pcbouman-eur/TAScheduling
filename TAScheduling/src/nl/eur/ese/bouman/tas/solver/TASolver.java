@@ -20,12 +20,18 @@ public class TASolver
 	
 	private int maxSols;
 	private TreeSet<ScheduleNode> bestSols;
-	
-	public TASolver(Instance i, Assistant as, CostInformation ci, BranchInformation bi, int maxSols)
+
+	public TASolver(Instance i, Assistant as, BranchInformation bi)
+	{
+		this(i, as, bi, Integer.MAX_VALUE);
+	}
+
+
+	public TASolver(Instance i, Assistant as, BranchInformation bi, int maxSols)
 	{
 		this.assistant = as;
-		this.ci = ci;
 		this.bi = bi;
+		this.ci = i.getCosts();
 		
 		this.sessions = i.getSessions()
 				         .stream()
@@ -91,7 +97,7 @@ public class TASolver
 		}
 	}
 	
-	public void commit(AssistantSchedule as)
+	private void commit(AssistantSchedule as)
 	{
 		double cost = as.evaluateCosts(ci);
 		
@@ -100,7 +106,7 @@ public class TASolver
 			return;
 		}
 		
-		if (bestSols.size() < maxSols || cost < bestSols.last().cost)
+		if (bestSols.size() < maxSols || cost > bestSols.last().cost)
 		{
 			bestSols.add(new ScheduleNode(as.copy(), cost));
 			while (bestSols.size() > maxSols)

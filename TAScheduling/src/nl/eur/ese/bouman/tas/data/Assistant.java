@@ -1,6 +1,6 @@
 package nl.eur.ese.bouman.tas.data;
 
-public abstract class Assistant
+public abstract class Assistant implements Comparable<Assistant>
 {
 	private final String name;
 	
@@ -28,4 +28,10 @@ public abstract class Assistant
 		return name;
 	}
 		
+	@Override
+	public int compareTo(Assistant other)
+	{
+		return name.compareTo(other.name);
+	}
+	
 }

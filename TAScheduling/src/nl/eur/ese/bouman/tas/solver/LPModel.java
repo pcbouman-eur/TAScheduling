@@ -27,6 +27,7 @@ public class LPModel
 	private List<AssistantSchedule> schedules;
 	private BranchInformation bi;
 	
+	private Map<Session,CLPVariable> dummyMap;
 	private Map<AssistantSchedule,CLPVariable> varMap;
 	private Map<Session,CLPConstraint> sessionMap;
 	private Map<Assistant,CLPConstraint> assistantMap;
@@ -59,6 +60,18 @@ public class LPModel
 		Map<AssistantSchedule,Double> result = new TreeMap<>();
 		
 		for (Entry<AssistantSchedule,CLPVariable> e : varMap.entrySet())
+		{
+			result.put(e.getKey(), model.getSolution(e.getValue()));
+		}
+		
+		return result;
+	}
+	
+	public Map<Session,Double> getUncovered()
+	{
+		Map<Session,Double> result = new TreeMap<>();
+		
+		for (Entry<Session,CLPVariable> e : dummyMap.entrySet())
 		{
 			result.put(e.getKey(), model.getSolution(e.getValue()));
 		}
@@ -101,13 +114,19 @@ public class LPModel
 	private void initVars()
 	{
 		varMap = new TreeMap<>();
+		dummyMap = new TreeMap<>();
 		for (AssistantSchedule as : schedules)
 		{
 			if (bi.isPossible(as))
 			{
-				CLPVariable var = model.addVariable().bounds(0, 1);
+				CLPVariable var = model.addVariable().lb(0);
 				varMap.put(as, var);
 			}
+		}
+		for (Session s : instance.getSessions())
+		{
+			CLPVariable var = model.addVariable().lb(0);
+			dummyMap.put(s, var);
 		}
 	}
 	
@@ -140,7 +159,9 @@ public class LPModel
 		Map<Session,CLPExpression> exprs = new TreeMap<>();
 		for (Session s : instance.getSessions())
 		{
-			exprs.put(s, model.createExpression());
+			CLPExpression expr = model.createExpression();
+			expr = expr.add(dummyMap.get(s));
+			exprs.put(s, expr);
 		}
 		
 		for (AssistantSchedule as : schedules)
@@ -165,7 +186,11 @@ public class LPModel
 		CLPExpression expr = model.createExpression();
 		for (Entry<AssistantSchedule, CLPVariable> e : varMap.entrySet())
 		{
-			expr.add(e.getValue(), e.getKey().evaluateCosts(ci));
+			expr = expr.add(e.getValue(), e.getKey().evaluateCosts(ci));
+		}
+		for (Entry<Session,CLPVariable> e : dummyMap.entrySet())
+		{
+			expr = expr.add(e.getValue(), ci.getPenalty(e.getKey()));
 		}
 		expr.asObjective();
 	} 

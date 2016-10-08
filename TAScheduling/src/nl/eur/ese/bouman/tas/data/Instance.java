@@ -18,6 +18,7 @@ public class Instance
 		assistants = new ArrayList<>();
 		groups = new ArrayList<>();
 		sessions = new TreeSet<>();
+		ci = CostInformation.getDefault();
 	}
 	
 	public void addAssistant(Assistant a)
@@ -53,5 +54,13 @@ public class Instance
 	public CostInformation getCosts()
 	{
 		return ci;
+	}
+	
+	@Override
+	public String toString()
+	{
+		return "Instance("+assistants.size()+" assistants, "
+				          +groups.size()+" groups, "
+				          +sessions.size()+" sessions)";
 	}
 }
