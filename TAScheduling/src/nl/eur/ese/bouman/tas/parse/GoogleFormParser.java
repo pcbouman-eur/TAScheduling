@@ -66,6 +66,10 @@ public class GoogleFormParser
 		System.out.println(schedules.size());
 		
 		LPModel lmp = new LPModel(i, schedules, bi);
+		
+		lmp.bnb(10e-9);
+		
+		/*
 		System.out.println(lmp.solve());
 		System.out.println(lmp.getObjectiveValue());
 		for (Entry<AssistantSchedule,Double> e : lmp.getValues().entrySet())
@@ -84,6 +88,7 @@ public class GoogleFormParser
 				System.out.println(e.getValue()+" : "+e.getKey());
 			}
 		}
+		*/
 	}
 	
 	public static Instance readInstance(File csvFile, Charset csvCs, File sessFile)

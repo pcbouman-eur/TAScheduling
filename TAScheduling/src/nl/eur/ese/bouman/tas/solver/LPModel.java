@@ -111,6 +111,74 @@ public class LPModel
 		return result;
 	}
 	
+	public void bnb(double eps)
+	{
+		BNBContext con = new BNBContext();
+		bnb(con, eps);
+		System.out.println(con.lowerBound);
+		System.out.println(con.schedules);
+		System.out.println(con.dummies);
+	}
+	
+	private void bnb(BNBContext con, double eps)
+	{
+		STATUS status = model.solve();
+		if (status != STATUS.OPTIMAL )
+		{
+			System.out.println("Infeasible");
+			return;
+		}
+		double obj = model.getObjectiveValue();
+		if (obj <= con.lowerBound)
+		{
+			System.out.println("UB < LB -> Bound");
+			return;
+		}
+		if (isInteger(eps))
+		{
+			// We found a better solution
+			con.lowerBound = obj;
+			con.dummies = getUncovered();
+			con.schedules = getValues();
+			System.out.println("Better Solution! obj="+obj);
+			return;
+		}
+		
+		CLPVariable var = findVar();
+		double val = model.getSolution(var);
+		if (var == null)
+		{
+			throw new IllegalStateException("Non-integer but no fractional variable found");
+		}
+		System.out.println("Branching... "+var+" >=" + Math.ceil(val));
+		var.free().lb(Math.ceil(val));
+		bnb(con, eps);
+		System.out.println("Branching... "+var+" <" + Math.floor(val));
+		var.free().lb(0).ub(Math.floor(val));
+		bnb(con, eps);
+		System.out.println("Branching on "+var+" done.");
+		var.free().lb(0);
+	}
+	
+	private CLPVariable findVar()
+	{
+		double best = -1;
+		CLPVariable bestVar = null;
+		List<CLPVariable> vars = new ArrayList<>(dummyMap.values());
+		vars.addAll(varMap.values());
+		for (CLPVariable var : vars)
+		{
+			double val = model.getSolution(var);
+			double dist = Math.abs(0.5 - (Math.round(val) - val));
+			if (dist > best)
+			{
+				best = dist;
+				bestVar = var;
+			}
+		}
+		return bestVar;
+	}
+	
 	private void initVars()
 	{
 		varMap = new TreeMap<>();
@@ -194,5 +262,12 @@ public class LPModel
 		}
 		expr.asObjective();
 	} 
+
+	private static class BNBContext
+	{
+		public double lowerBound = Double.NEGATIVE_INFINITY;
+		public Map<AssistantSchedule,Double> schedules;
+		public Map<Session,Double> dummies;
+	}
 	
 }
