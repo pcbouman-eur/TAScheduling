@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import nl.eur.ese.bouman.tas.data.Assistant;
 import nl.eur.ese.bouman.tas.data.CostInformation;
 import nl.eur.ese.bouman.tas.data.Group;
+import nl.eur.ese.bouman.tas.data.Instance;
 import nl.eur.ese.bouman.tas.data.Session;
 
 import java.util.SortedSet;
@@ -16,15 +17,23 @@ import java.util.TreeSet;
 
 public class AssistantSchedule implements Comparable<AssistantSchedule>
 {
+	private final Instance instance;
 	private final Assistant assistant;
 	private final TreeSet<Session> sessions;
 	private final Map<String,Integer> counts;
+	private int totalCount = 0;
 	
-	public AssistantSchedule(Assistant a)
+	public AssistantSchedule(Instance i, Assistant a)
 	{
 		this.assistant = a;
 		this.sessions = new TreeSet<>();
 		this.counts = new LinkedHashMap<>();
+		this.instance = i;
+		
+		for (Session s : i.getSessions())
+		{
+			counts.put(s.getCategory(), 0);
+		}
 	}
 	
 	public boolean addSession(Session s)
@@ -33,6 +42,7 @@ public class AssistantSchedule implements Comparable<AssistantSchedule>
 		if (change)
 		{
 			counts.merge(s.getCategory(), 1, Integer::sum);
+			totalCount++;
 		}
 		return change;
 	}
@@ -43,6 +53,7 @@ public class AssistantSchedule implements Comparable<AssistantSchedule>
 		if (change)
 		{
 			counts.merge(s.getCategory(), -1, Integer::sum);
+			totalCount--;
 		}
 		return change;
 	}
@@ -54,7 +65,9 @@ public class AssistantSchedule implements Comparable<AssistantSchedule>
 	
 	public int getRemainingCapacity(String cat)
 	{
-		return assistant.maximumSessions(cat) - counts.getOrDefault(cat, 0);
+		int catCap = assistant.maximumSessions(cat) - counts.getOrDefault(cat, 0);
+		int totCap = assistant.maximumSessions() - totalCount;
+		return Math.min(catCap, totCap);
 	}
 	
 	public Assistant getAssistant()
@@ -64,7 +77,7 @@ public class AssistantSchedule implements Comparable<AssistantSchedule>
 	
 	public AssistantSchedule copy()
 	{
-		AssistantSchedule result = new AssistantSchedule(assistant);
+		AssistantSchedule result = new AssistantSchedule(instance,assistant);
 		result.sessions.addAll(sessions);
 		result.counts.putAll(counts);
 		return result;
@@ -163,6 +176,9 @@ public class AssistantSchedule implements Comparable<AssistantSchedule>
 		{
 			result += ci.getSameGroupCost(e.getKey(), e.getValue());
 		}
+		
+		// Distribution costs
+		result += ci.getDistributionCost(counts);
 		
 		return result;
 	}

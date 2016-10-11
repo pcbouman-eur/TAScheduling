@@ -3,7 +3,9 @@ package nl.eur.ese.bouman.tas.data;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class Instance
@@ -39,6 +41,20 @@ public class Instance
 	public SortedSet<Session> getSessions()
 	{
 		return Collections.unmodifiableSortedSet(sessions);
+	}
+	
+	public Map<Slot,SortedSet<Session>> getSlotMap()
+	{
+		Map<Slot,SortedSet<Session>> result = new TreeMap<>();
+		for (Session s : sessions)
+		{
+			if (!result.containsKey(s.getSlot()))
+			{
+				result.put(s.getSlot(), new TreeSet<>());
+			}
+			result.get(s.getSlot()).add(s);
+		}
+		return result;
 	}
 	
 	public List<Assistant> getAssistants()
