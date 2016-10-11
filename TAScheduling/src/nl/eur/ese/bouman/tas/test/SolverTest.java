@@ -54,7 +54,7 @@ public class SolverTest
 		available.put(sl3, 0d);
 		
 		
-		Assistant a1 = new SimpleAssistant("Assistant 1", available, 1);
+		Assistant a1 = new SimpleAssistant("Assistant 1", available, 1, 2);
 		CostInformation ci = CostInformation.getDefault();
 		BranchInformation bi = BranchInformation.getDefault();
 		

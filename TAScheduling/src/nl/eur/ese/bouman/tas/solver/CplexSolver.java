@@ -16,6 +16,7 @@ import nl.eur.ese.bouman.tas.data.CostInformation;
 import nl.eur.ese.bouman.tas.data.Instance;
 import nl.eur.ese.bouman.tas.data.Session;
 import nl.eur.ese.bouman.tas.solution.AssistantSchedule;
+import nl.eur.ese.bouman.tas.solution.Solution;
 
 public class CplexSolver
 {
@@ -138,6 +139,43 @@ public class CplexSolver
 	public void solve() throws IloException
 	{
 		model.solve();
+	}
+	
+	public void printSolution() throws IloException
+	{
+		System.out.println("Objective value : "+model.getObjValue());
+		System.out.println("Selected Schedules: ");
+		for (Entry<AssistantSchedule,IloNumVar> e : scheduleVars.entrySet())
+		{
+			double value = model.getValue(e.getValue());
+			if (value > 10e-10)
+			{
+				System.out.println(value+" -> "+e.getKey());
+			}
+		}
+		System.out.println("\nUncovered Sessions:");
+		for (Entry<Session,IloNumVar> e : dummyVars.entrySet())
+		{
+			double value = model.getValue(e.getValue());
+			if (value > 10e-10)
+			{
+				System.out.println(value+" -> "+e.getKey());
+			}
+		}
+	}
+	
+	public Solution getSolution() throws IloException
+	{
+		List<AssistantSchedule> schedules = new ArrayList<>();
+		for (Entry<AssistantSchedule,IloNumVar> e : scheduleVars.entrySet())
+		{
+			double value = model.getValue(e.getValue());
+			if (value >= 1 - 10e-10)
+			{
+				schedules.add(e.getKey());
+			}
+		}
+		return new Solution(instance, schedules);
 	}
 	
 }

@@ -7,12 +7,14 @@ public class SimpleAssistant extends Assistant
 {
 	private Map<Slot,Double> available;
 	private int maxSess;
+	private int totMax;
 
-	public SimpleAssistant(String name, Map<Slot,Double> available, int maxSess)
+	public SimpleAssistant(String name, Map<Slot,Double> available, int maxSess, int totMax)
 	{
 		super(name);
 		this.available = new TreeMap<>(available);
 		this.maxSess = maxSess;
+		this.totMax = totMax;
 	}
 
 	@Override
@@ -26,6 +28,12 @@ public class SimpleAssistant extends Assistant
 	public int maximumSessions(String category)
 	{
 		return maxSess;
+	}
+	
+	@Override
+	public int maximumSessions()
+	{
+		return totMax;
 	}
 
 	@Override

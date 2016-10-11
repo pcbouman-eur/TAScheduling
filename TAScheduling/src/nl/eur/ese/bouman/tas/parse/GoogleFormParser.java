@@ -9,7 +9,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -17,6 +16,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
+import ilog.concert.IloException;
 import nl.eur.ese.bouman.tas.data.Assistant;
 import nl.eur.ese.bouman.tas.data.CostInformation;
 import nl.eur.ese.bouman.tas.data.Group;
@@ -24,7 +24,9 @@ import nl.eur.ese.bouman.tas.data.Instance;
 import nl.eur.ese.bouman.tas.data.Session;
 import nl.eur.ese.bouman.tas.data.Slot;
 import nl.eur.ese.bouman.tas.solution.AssistantSchedule;
+import nl.eur.ese.bouman.tas.solution.Solution;
 import nl.eur.ese.bouman.tas.solver.BranchInformation;
+import nl.eur.ese.bouman.tas.solver.CplexSolver;
 import nl.eur.ese.bouman.tas.solver.LPModel;
 import nl.eur.ese.bouman.tas.solver.TASolver;
 
@@ -50,24 +52,30 @@ public class GoogleFormParser
 		{
 			TASolver tas = new TASolver(i,a,bi);
 			tas.run();
-			System.out.println("For assistant "+a);
-			for (AssistantSchedule schedule : tas.getSchedules())
-			{
-				double cost = schedule.evaluateCosts(ci);
-				//if (cost >= 0)
-				//{
-					schedules.add(schedule);
-				//	System.out.println(cost+" : "+schedule);
-				//}
-			}
-			System.out.println();
+			List<AssistantSchedule> taSchedules = tas.getSchedules();
+			System.out.println(taSchedules.size()+" schedules for assistant "+a);
+			schedules.addAll(taSchedules);
 		}
 
-		System.out.println(schedules.size());
+		System.out.println("Total schedules : "+schedules.size());
 		
-		LPModel lmp = new LPModel(i, schedules, bi);
+		try
+		{
+			CplexSolver solver = new CplexSolver(i, schedules, true);
+			solver.solve();
+			solver.printSolution();
+			Solution sol = solver.getSolution();
+			sol.writeCSV(new File("output.csv"),";");
+			sol.writeHTML(new File("output.html"));
+		}
+		catch(IloException ie)
+		{
+			ie.printStackTrace();
+		}
 		
-		lmp.bnb(10e-9);
+		//LPModel lmp = new LPModel(i, schedules, bi);
+		
+		//lmp.bnb(10e-9);
 		
 		/*
 		System.out.println(lmp.solve());
@@ -181,18 +189,25 @@ public class GoogleFormParser
 			Map<Integer, Preference> rows = iar.parseInARow(record);
 			Map<String, Preference> groups = gp.parseGroups(record);
 			
+			
 			if (ver)
 			{
-				groups.put("IB", Preference.UNAVAILABLE);
+				groups.put("IB", Preference.DISFAVORED);
+				//groups.put("IB", Preference.UNAVAILABLE);
 			}
 			else
 			{
+				//groups.put("EC", Preference.DISFAVORED);
+				//groups.put("FI", Preference.DISFAVORED);
+				//groups.put("MD", Preference.DISFAVORED);
 				groups.put("EC", Preference.UNAVAILABLE);
 				groups.put("FI", Preference.UNAVAILABLE);
 				groups.put("MD", Preference.UNAVAILABLE);
 			}
 			
-			FormAssistant fa = new FormAssistant(name,sess,slots,rows,groups);
+			
+			//FormAssistant fa = new FormAssistant(name,sess,slots,rows,groups);
+			FormAssistant fa = new FormAssistant(name,sess,(int)Math.ceil(sess/2.0),slots,rows,groups);
 			result.add(fa);
 		}
 		
@@ -284,7 +299,7 @@ public class GoogleFormParser
 			{
 				if (line.startsWith("*"))
 				{
-					currentCat = line.substring(0).trim();
+					currentCat = line.substring(1).trim();
 				}
 				else if (line.startsWith(":"))
 				{

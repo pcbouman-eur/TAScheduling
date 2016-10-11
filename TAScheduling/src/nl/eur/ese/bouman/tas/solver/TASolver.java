@@ -13,6 +13,7 @@ import nl.eur.ese.bouman.tas.solution.AssistantSchedule;
 
 public class TASolver
 {
+	private Instance instance;
 	private Assistant assistant;
 	private CostInformation ci;
 	private BranchInformation bi;
@@ -39,6 +40,7 @@ public class TASolver
 				         .collect(Collectors.toList());
 		
 		this.maxSols = maxSols;
+		this.instance = i;
 	}
 	
 	public void run()
@@ -49,7 +51,7 @@ public class TASolver
 				                      .collect(Collectors.toList());
 		List<Session> choose = new ArrayList<>(sessions);
 		choose.removeAll(fixed);
-		AssistantSchedule as = new AssistantSchedule(assistant);
+		AssistantSchedule as = new AssistantSchedule(instance, assistant);
 		fixed.forEach(s -> as.addSession(s));
 		search(choose, as, null);
 	}

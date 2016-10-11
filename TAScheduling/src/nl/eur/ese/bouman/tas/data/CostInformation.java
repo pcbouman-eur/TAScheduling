@@ -12,6 +12,8 @@ public interface CostInformation
 	
 	public boolean isRelevant(Assistant a, double cost);
 	
+	public double getDistributionCost(Map<String,Integer> counts);
+	
 	
 	public default CostInformation derive(Map<Session,Double> sesDuals,
 			                              Map<Assistant,Double> aDuals)
@@ -45,6 +47,12 @@ public interface CostInformation
 				return ci.getPenalty(s);
 			}
 			
+			@Override
+			public double getDistributionCost(Map<String, Integer> counts)
+			{
+				return ci.getDistributionCost(counts);
+			}
+			
 		};
 	}
 	
@@ -53,13 +61,15 @@ public interface CostInformation
 		return build( (g,i) -> i >= 2 ? 1d : 0d,
 				          s -> 0d,
 				      (a,d) -> true,
-				          p -> -1000d);
+				          p -> -1000d,
+				          -5);
 	}
 	
 	public static CostInformation build( BiFunction<Group,Integer,Double> sameGroup,
 			                             Function<Session,Double> shadow,
 			                             BiFunction<Assistant,Double,Boolean> relevant,
-			                             Function<Session,Double> penalty)
+			                             Function<Session,Double> penalty,
+			                             double distributionPenalty)
 	{
 		return new CostInformation()
 		{
@@ -84,6 +94,15 @@ public interface CostInformation
 			public double getPenalty(Session s)
 			{
 				return penalty.apply(s);
+			}
+			
+			@Override
+			public double getDistributionCost(Map<String, Integer> counts)
+			{
+				Integer min = counts.values().stream().mapToInt(i -> i).min().getAsInt();
+				Integer max = counts.values().stream().mapToInt(i -> i).max().getAsInt();
+				
+				return distributionPenalty * (max - min);
 			}
 		};
 	}

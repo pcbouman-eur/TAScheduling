@@ -12,6 +12,7 @@ public abstract class Assistant implements Comparable<Assistant>
 	//public abstract boolean available(Slot s);
 	public abstract boolean canCover(Session s);
 	public abstract int maximumSessions(String category);
+	public abstract int maximumSessions();
 	
 	public abstract double getSlotCost(Session s);
 	public abstract double getConsecutiveCost(int k);

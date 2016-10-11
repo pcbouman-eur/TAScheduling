@@ -11,6 +11,7 @@ import nl.eur.ese.bouman.tas.data.Slot;
 
 public class FormAssistant extends Assistant
 {
+	private int maxPerCat;
 	private int maxTotal;
 	
 	private Map<Integer,Preference> inARow;
@@ -22,8 +23,16 @@ public class FormAssistant extends Assistant
 			Map<Integer,Preference> inARow, Map<String,Preference> groups,
 			PreferenceMap pm)
 	{
+		this(name, max, max, slots, inARow, groups, pm);
+	}
+	
+	public FormAssistant(String name, int max, int maxPerCat, 
+			Map<Slot,Preference> slots, Map<Integer,Preference> inARow,
+			Map<String,Preference> groups, PreferenceMap pm)
+	{
 		super(name);
 		this.maxTotal = max;
+		this.maxPerCat = maxPerCat;
 		
 		this.inARow = new HashMap<>(inARow);
 		this.slotPrefs = new HashMap<>(slots);
@@ -31,10 +40,17 @@ public class FormAssistant extends Assistant
 		this.pm = pm;
 	}
 	
+	public FormAssistant(String name, int max, int maxPerCat,
+			Map<Slot,Preference> slots, Map<Integer,Preference> inARow,
+			Map<String,Preference> groups)
+	{
+		this(name, max, slots, inARow, groups, PreferenceMap.getDefault());
+	}
+
 	public FormAssistant(String name, int max, Map<Slot,Preference> slots,
 			Map<Integer,Preference> inARow, Map<String,Preference> groups)
 	{
-		this(name, max, slots, inARow, groups, PreferenceMap.getDefault());
+		this(name, max, max, slots, inARow, groups);
 	}
 
 	@Override
@@ -48,7 +64,7 @@ public class FormAssistant extends Assistant
 	@Override
 	public int maximumSessions(String category)
 	{
-		return maxTotal / 2;
+		return maxPerCat;
 	}
 
 	@Override
@@ -85,4 +101,15 @@ public class FormAssistant extends Assistant
 		return Preference.NEUTRAL;
 	}
 
+	@Override
+	public int maximumSessions()
+	{
+		return maxTotal;
+	}
+
+	public Preference getPreference(Slot s)
+	{
+		return slotPrefs.getOrDefault(s, Preference.UNKNOWN);
+	}
+	
 }
