@@ -61,7 +61,7 @@ public class SlotParser
 			return Optional.empty();
 		}
 		
-		String day = match.group(0);
+		String day = match.group(1);
 		match.matches();
 		int fromHour = getHour(match.group(2));
 		int endHour = getHour(match.group(3));
