@@ -9,11 +9,24 @@ public class PreferenceMap
 	private Map<Preference,Double> rowCost;
 	private Map<Preference,Double> groupCost;
 	
+	private double slotFactor;
+	private double rowFactor;
+	private double groupFactor;
+	
 	public PreferenceMap()
+	{
+		this(1d,1d,1d);
+	}
+	
+	public PreferenceMap(double slotFactor, double rowFactor, double groupFactor)
 	{
 		this.slotCost = new HashMap<Preference,Double>();
 		this.rowCost = new HashMap<Preference,Double>();
 		this.groupCost = new HashMap<Preference,Double>();
+		
+		this.slotFactor = slotFactor;
+		this.rowFactor = rowFactor;
+		this.groupFactor = groupFactor;
 	}
 	
 	public void putSlotCost(Preference p, double d)
@@ -40,22 +53,27 @@ public class PreferenceMap
 	
 	public double getSlotCost(Preference p)
 	{
-		return slotCost.getOrDefault(p, 0d);
+		return slotFactor * slotCost.getOrDefault(p, 0d);
 	}
 	
 	public double getRowCost(Preference p)
 	{
-		return rowCost.getOrDefault(p, 0d);
+		return rowFactor * rowCost.getOrDefault(p, 0d);
 	}
 	
 	public double getGroupCost(Preference p)
 	{
-		return groupCost.getOrDefault(p, 0d);
+		return groupFactor * groupCost.getOrDefault(p, 0d);
 	}
 	
 	public static PreferenceMap getDefault()
 	{
-		PreferenceMap result = new PreferenceMap();
+		return getDefault(1d,1d,1d);
+	}
+	
+	public static PreferenceMap getDefault(double slotFactor, double rowFactor, double groupFactor)
+	{
+		PreferenceMap result = new PreferenceMap(slotFactor, rowFactor, groupFactor);
 		result.putAll(Preference.DISFAVORED, -5);
 		result.putAll(Preference.SLIGHTLY_DISFAVORED, -1);
 		result.putAll(Preference.NEUTRAL, 0);

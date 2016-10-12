@@ -140,7 +140,7 @@ public class GoogleFormParser
 	
 	public static List<FormAssistant> readFormData(File f, Charset cs) throws IOException
 	{
-		return readFormData(f, cs, PreferenceMap.getDefault());
+		return readFormData(f, cs, PreferenceMap.getDefault(1d,10d,10d));
 	}
 	
 	public static List<FormAssistant> readFormData(File f, Charset cs, PreferenceMap pm) throws IOException

@@ -62,7 +62,7 @@ public interface CostInformation
 				          s -> 0d,
 				      (a,d) -> true,
 				          p -> -1000d,
-				          -5);
+				          0d);
 	}
 	
 	public static CostInformation build( BiFunction<Group,Integer,Double> sameGroup,

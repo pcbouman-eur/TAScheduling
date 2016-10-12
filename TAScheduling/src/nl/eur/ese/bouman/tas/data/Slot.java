@@ -1,5 +1,9 @@
 package nl.eur.ese.bouman.tas.data;
 
+import java.time.DayOfWeek;
+import java.time.format.TextStyle;
+import java.util.Locale;
+
 public class Slot implements Comparable<Slot>
 {
 	private final String day;
@@ -11,6 +15,23 @@ public class Slot implements Comparable<Slot>
 		this.day = day.trim().toUpperCase();
 		this.beginHour = beginHour;
 		this.endHour = endHour;
+	}
+	
+	public DayOfWeek getDayOfWeek()
+	{
+		try
+		{
+			return DayOfWeek.valueOf(day);
+		}
+		catch (IllegalArgumentException iae)
+		{
+			return null;
+		}
+	}
+	
+	public String getDay()
+	{
+		return day;
 	}
 	
 	public boolean overlaps(Slot other)
@@ -34,6 +55,12 @@ public class Slot implements Comparable<Slot>
 	@Override
 	public String toString()
 	{
+		DayOfWeek dow = getDayOfWeek();
+		if (dow != null)
+		{
+			return dow.getDisplayName(TextStyle.SHORT, Locale.US) 
+					+ " "+beginHour+"-"+endHour;
+		}
 		return day+" "+beginHour+"-"+endHour;
 	}
 
@@ -71,6 +98,13 @@ public class Slot implements Comparable<Slot>
 	@Override
 	public int compareTo(Slot other)
 	{
+		DayOfWeek dow1 = getDayOfWeek();
+		DayOfWeek dow2 = other.getDayOfWeek();
+		if (dow1 != null && dow2 != null && dow1 != dow2)
+		{
+			return dow1.getValue() - dow2.getValue();
+		}
+		
 		if (!day.equals(other.day))
 		{
 			return day.compareTo(other.day);

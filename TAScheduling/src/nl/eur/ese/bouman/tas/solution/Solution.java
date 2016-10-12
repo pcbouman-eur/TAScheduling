@@ -107,9 +107,10 @@ public class Solution
 			pw.println(" .slightlyFavored { background-color: #ccffcc; }");
 			pw.println(" .favored { background-color: #75ff75; }");
 			pw.println(" .neutral { background-color: #fffa70; }");
-			pw.println(" .slightlyDisfavored { background-color: #ffba75; }");
-			pw.println(" .disFavored { background-color: #ff9075; }");
+			pw.println(" .slightlyDisfavored { background-color: #ffadad; }");
+			pw.println(" .disFavored { background-color: #ff6b6b; }");
 			pw.println(" .unavailable { background-color: #000000; }");
+			pw.println(" .lastDay td { padding-top: 5px; }");
 			pw.println("</style>\n<body>");
 			
 			pw.println("<table>");
@@ -122,9 +123,17 @@ public class Solution
 			
 			Map<Slot, SortedSet<Session>> map = instance.getSlotMap();
 			
+			Slot prevSlot = null;
 			for (Slot s : map.keySet())
 			{
-				pw.println("\t<tr>");
+				pw.print("\t<tr");
+				if (prevSlot != null && !prevSlot.getDay().equals(s.getDay()))
+				{
+					pw.print(" class=\"lastDay\"");
+				}
+				pw.println(">");
+				prevSlot = s;
+
 				pw.println("\t\t<td class=\"slot\">"+s.toString()+"</td>");
 				for (Assistant a : assistants)
 				{
