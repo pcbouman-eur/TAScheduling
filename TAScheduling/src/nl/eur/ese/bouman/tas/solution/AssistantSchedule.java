@@ -11,6 +11,7 @@ import nl.eur.ese.bouman.tas.data.CostInformation;
 import nl.eur.ese.bouman.tas.data.Group;
 import nl.eur.ese.bouman.tas.data.Instance;
 import nl.eur.ese.bouman.tas.data.Session;
+import nl.eur.ese.bouman.tas.data.Slot;
 
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -56,6 +57,16 @@ public class AssistantSchedule implements Comparable<AssistantSchedule>
 			totalCount--;
 		}
 		return change;
+	}
+	
+	public SortedSet<Slot> getSlots()
+	{
+		SortedSet<Slot> result = new TreeSet<>();
+		for (Session s : sessions)
+		{
+			result.add(s.getSlot());
+		}
+		return result;
 	}
 	
 	public SortedSet<Session> getSessions()

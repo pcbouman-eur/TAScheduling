@@ -15,8 +15,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -42,20 +44,27 @@ public class Solution
 	
 	private Instance instance;
 	private Map<Assistant,AssistantSchedule> schedules;
+	private Set<Assistant> affected;
 	
 	public Solution(Instance i, List<AssistantSchedule> sol)
 	{
 		this.instance = i;
 		this.schedules = new TreeMap<>();
+		this.affected = new TreeSet<>();
 		for (AssistantSchedule as : sol)
 		{
-			if (schedules.containsKey(as.getAssistant()))
+			if (this.schedules.containsKey(as.getAssistant()))
 			{
 				throw new IllegalArgumentException("Cannot store two "+
 						"schedules for the same assistant!");
 			}
-			schedules.put(as.getAssistant(), as);
+			this.schedules.put(as.getAssistant(), as);
 		}
+	}
+	
+	public void setAffected(Assistant a)
+	{
+		affected.add(a);
 	}
 	
 	public void writeCSV(File f) throws FileNotFoundException
@@ -131,6 +140,7 @@ public class Solution
 			pw.println(" .slightlyDisfavored { background-color: #ffadad; }");
 			pw.println(" .disFavored { background-color: #ff6b6b; }");
 			pw.println(" .unavailable { background-color: #000000; }");
+			pw.println(" .affected { font-style: italic; }");
 			pw.println(" .lastDay td { padding-top: 5px; }");
 			pw.println("</style>\n<body>");
 			
@@ -138,7 +148,16 @@ public class Solution
 			pw.println("\t<tr>\n\t\t<th>Time slot</th>");
 			for (Assistant a : assistants)
 			{
-				pw.println("\t\t<th>"+a.getName()+"</th>");
+				if (affected.contains(a))
+				{
+					pw.print("\t\t<th class=\"affected\">");
+					pw.print(a.getName()+" *");
+					pw.println("</th>");
+				}
+				else
+				{
+					pw.println("\t\t<th>"+a.getName()+"</th>");
+				}
 			}
 			pw.println("\t</tr>");
 			
@@ -303,5 +322,10 @@ public class Solution
 			}
 		}
 		return null;
+	}
+
+	public AssistantSchedule getSchedule(Assistant assistant)
+	{
+		return schedules.get(assistant).copy();
 	}
 }
