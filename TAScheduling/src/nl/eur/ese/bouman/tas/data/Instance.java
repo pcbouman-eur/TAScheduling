@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -78,5 +79,37 @@ public class Instance
 		return "Instance("+assistants.size()+" assistants, "
 				          +groups.size()+" groups, "
 				          +sessions.size()+" sessions)";
+	}
+
+	public Optional<Assistant> getAssistant(String s)
+	{
+		return assistants
+				.stream()
+				.filter(a -> a.getName().trim().equalsIgnoreCase(s.trim()))
+				.findAny();
+	}
+	
+	public Optional<Group> getGroup(String s)
+	{
+		return groups
+				.stream()
+				.filter(g -> g.getName().equalsIgnoreCase(s.trim()))
+				.findAny();
+	}
+
+	public Optional<Session> getSession(Slot slot, String groupName, String cat)
+	{
+		Optional<Group> g = getGroup(groupName);
+		if (!g.isPresent())
+		{
+			return Optional.empty();
+		}
+		Group group = g.get();
+		return sessions
+				.stream()
+				.filter( s -> s.getCategory().equals(cat)
+				           && s.getGroup().equals(group)
+				           && s.getSlot().equals(slot))
+				.findAny();
 	}
 }

@@ -1,14 +1,26 @@
 package nl.eur.ese.bouman.tas.solution;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.time.DayOfWeek;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.SortedSet;
 import java.util.TreeMap;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
 import nl.eur.ese.bouman.tas.data.Assistant;
 import nl.eur.ese.bouman.tas.data.Instance;
@@ -19,6 +31,15 @@ import nl.eur.ese.bouman.tas.parse.Preference;
 
 public class Solution
 {
+	private final static String SLOT_FIELD = "slot";
+	private final static String CAT_FIELD = "category";
+	private final static String GROUP_FIELD = "group";
+	private final static String TOTAL_FIELD = "Total";
+	private final static String QUALITY = "Schedule quality";
+	private final static Locale LOCALE = Locale.US;
+	private final static TextStyle STYLE = TextStyle.SHORT_STANDALONE;
+
+	
 	private Instance instance;
 	private Map<Assistant,AssistantSchedule> schedules;
 	
@@ -47,12 +68,12 @@ public class Solution
 
 		try (PrintWriter pw = new PrintWriter(f))
 		{
-			pw.print("category"+sep+"slot"+sep+"group");
+			pw.print(CAT_FIELD+sep+SLOT_FIELD+sep+GROUP_FIELD);
 			for (Assistant a : instance.getAssistants())
 			{
 				pw.print(sep+a);
 			}
-			pw.println(sep+"Total");
+			pw.println(sep+TOTAL_FIELD);
 			
 			double total = 0;
 			for (Session s : instance.getSessions())
@@ -83,7 +104,7 @@ public class Solution
 			}
 			
 			pw.println();
-			pw.print("Schedule quality"+sep+sep);
+			pw.print(QUALITY+sep+sep);
 			for (Assistant a : instance.getAssistants())
 			{
 				AssistantSchedule as = schedules.get(a);
@@ -192,6 +213,93 @@ public class Solution
 			if (sess.getSlot().equals(timeslot))
 			{
 				return sess;
+			}
+		}
+		return null;
+	}
+	
+	
+	public static Solution readSolution(File f, Instance i, char sep) throws IOException
+	{
+		CSVFormat format = CSVFormat.EXCEL.withFirstRecordAsHeader().withDelimiter(sep);
+		try (CSVParser csv = new CSVParser(new InputStreamReader(new FileInputStream(f)), format))
+		{
+			Map<Assistant,AssistantSchedule> schedules = new HashMap<>();
+			
+			Map<String,Assistant> assistantHeaders = new HashMap<>();
+			
+			for (String s : csv.getHeaderMap().keySet())
+			{
+				if (   !s.equals(SLOT_FIELD)  && !s.equals(CAT_FIELD)
+					&& !s.equals(GROUP_FIELD) && !s.equals(TOTAL_FIELD))
+				{
+					Assistant a = i.getAssistant(s).orElse(null);
+					if (a != null)
+					{
+						schedules.put(a, new AssistantSchedule(i, a));
+						assistantHeaders.put(s, a);
+					}
+					else
+					{
+						throw new IllegalArgumentException("Could not find an assistant for column "+s);
+					}
+				}
+			}
+			
+			for (CSVRecord record : csv)
+			{
+				if (record.size() <= 3 || record.get(CAT_FIELD).equals(QUALITY))
+				{
+					// This is a record without relevant information 
+					continue;
+				}
+				
+				Slot slot = parseSlot(record.get(SLOT_FIELD), LOCALE, STYLE);
+				String groupName = record.get(GROUP_FIELD);
+				String cat = record.get(CAT_FIELD);
+				Session ses = i.getSession(slot, groupName, cat).orElse(null);
+				if (ses != null)
+				{
+					for (Entry<String,Assistant> e : assistantHeaders.entrySet())
+					{
+						String dat = record.get(e.getKey());
+						if (dat != null && dat.trim().length() > 0 )
+						{
+							schedules.get(e.getValue()).addSession(ses);
+						}
+					}
+				}
+				else
+				{
+					throw new IllegalArgumentException("Could not find a session for "
+								+groupName+" at "+slot+" for category "+cat);
+				}
+			}
+			return new Solution(i, new ArrayList<>(schedules.values()));
+		}
+	}
+	
+	private static Slot parseSlot(String s, Locale l, TextStyle ts)
+	{
+		String [] split = s.split(" ");
+		if (split.length < 2)
+		{
+			System.out.println(s);
+		}
+		DayOfWeek dow = parseDOW(split[0], l, ts);
+		String [] split2 = split[1].split("-");
+		int from = Integer.parseInt(split2[0]);
+		int to = Integer.parseInt(split2[1]);
+		return new Slot(dow.toString(), from, to);
+	}
+	
+	private static DayOfWeek parseDOW(String dow, Locale l, TextStyle ts)
+	{
+		for (DayOfWeek d : DayOfWeek.values())
+		{
+			if (d.getDisplayName(ts, l).equalsIgnoreCase(dow))
+			{
+				return d;
 			}
 		}
 		return null;
