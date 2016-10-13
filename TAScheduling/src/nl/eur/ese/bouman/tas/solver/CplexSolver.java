@@ -20,13 +20,13 @@ import nl.eur.ese.bouman.tas.solution.Solution;
 
 public class CplexSolver
 {
-	private Instance instance;
-	private List<AssistantSchedule> schedules;
+	protected Instance instance;
+	protected List<AssistantSchedule> schedules;
 	private boolean binary;
 
-	private Map<Session,IloNumVar> dummyVars;
-	private Map<AssistantSchedule,IloNumVar> scheduleVars;
-	private IloCplex model;
+	protected Map<Session,IloNumVar> dummyVars;
+	protected Map<AssistantSchedule,IloNumVar> scheduleVars;
+	protected IloCplex model;
 	
 	private Map<IloRange,Session> sessionConstr;
 	private Map<IloRange,Assistant> assistantConstr;
@@ -39,7 +39,7 @@ public class CplexSolver
 		init();
 	}
 	
-	private void init() throws IloException
+	protected void init() throws IloException
 	{
 		model = new IloCplex();
 		
@@ -49,7 +49,7 @@ public class CplexSolver
 		initObjective();
 	}
 	
-	private void initVars() throws IloException
+	protected void initVars() throws IloException
 	{
 		dummyVars = new LinkedHashMap<>();
 		scheduleVars = new LinkedHashMap<>();
@@ -83,7 +83,7 @@ public class CplexSolver
 		}
 	}
 	
-	private void initSessionConstraints() throws IloException
+	protected void initSessionConstraints() throws IloException
 	{
 		sessionConstr = new LinkedHashMap<>();
 		for (Session s : instance.getSessions())
@@ -101,7 +101,7 @@ public class CplexSolver
 		}
 	}
 	
-	private void initAssistantConstraints() throws IloException
+	protected void initAssistantConstraints() throws IloException
 	{
 		assistantConstr = new LinkedHashMap<>();
 		for (Assistant a : instance.getAssistants())
@@ -119,7 +119,7 @@ public class CplexSolver
 		}
 	}
 	
-	private void initObjective() throws IloException
+	protected void initObjective() throws IloException
 	{
 		CostInformation ci = instance.getCosts();
 		IloNumExpr expr = model.constant(0);
