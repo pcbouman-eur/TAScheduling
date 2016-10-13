@@ -81,11 +81,13 @@ public class CplexReschedule extends CplexSolver
 	
 	public static class TimeSlotDistance implements Distance<AssistantSchedule>
 	{
+		private double diffCost;
 		private double general;
 		private double perSlot;
 		
-		public TimeSlotDistance(double general, double perSlot)
+		public TimeSlotDistance(double diffCost, double general, double perSlot)
 		{
+			this.diffCost = diffCost;
 			this.general = general;
 			this.perSlot = perSlot;
 		}
@@ -93,6 +95,11 @@ public class CplexReschedule extends CplexSolver
 		@Override
 		public Double apply(AssistantSchedule t, AssistantSchedule u)
 		{
+			if (t.equals(u))
+			{
+				return 0d;
+			}
+			
 			SortedSet<Slot> tSet = t.getSlots();
 			SortedSet<Slot> uSet = u.getSlots();
 			
@@ -105,9 +112,9 @@ public class CplexReschedule extends CplexSolver
 			int diff = union.size() - intersection.size();
 			if (diff == 0)
 			{
-				return 0d;
+				return diffCost;
 			}
-			return general + perSlot*diff;
+			return diffCost + general + perSlot*diff;
 		}
 	}
 }

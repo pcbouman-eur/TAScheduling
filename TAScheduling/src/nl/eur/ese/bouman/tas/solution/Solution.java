@@ -238,7 +238,7 @@ public class Solution
 	}
 	
 	
-	public static Solution readSolution(File f, Instance i, char sep) throws IOException
+	public static Solution readSolution(File f, Instance i, char sep, boolean strict) throws IOException
 	{
 		CSVFormat format = CSVFormat.EXCEL.withFirstRecordAsHeader().withDelimiter(sep);
 		try (CSVParser csv = new CSVParser(new InputStreamReader(new FileInputStream(f)), format))
@@ -260,7 +260,14 @@ public class Solution
 					}
 					else
 					{
-						throw new IllegalArgumentException("Could not find an assistant for column "+s);
+						if (strict)
+						{
+							throw new IllegalArgumentException("Could not find an assistant for column "+s);
+						}
+						else
+						{
+							System.out.println("Skipping assistant columm "+s);
+						}
 					}
 				}
 			}
@@ -290,8 +297,16 @@ public class Solution
 				}
 				else
 				{
-					throw new IllegalArgumentException("Could not find a session for "
-								+groupName+" at "+slot+" for category "+cat);
+					if (strict)
+					{
+						throw new IllegalArgumentException("Could not find a session for "
+									+groupName+" at "+slot+" for category "+cat);
+					}
+					else
+					{
+						System.out.println("Skipping session of "+groupName+" at "
+								+ slot +" for category "+cat);
+					}
 				}
 			}
 			return new Solution(i, new ArrayList<>(schedules.values()));

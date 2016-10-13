@@ -25,11 +25,11 @@ public class RescheduleMain
 		try
 		{
 			Instance i = GoogleFormParser.readInstance(csvFile, cs, sessFile);
-			Solution s = Solution.readSolution(new File("output.csv"), i, ';');
+			Solution s = Solution.readSolution(new File("output.csv"), i, ';', true);
 			
 			List<AssistantSchedule> schedules = TASolver.findAllSchedules(i, true);
 			
-			Distance<AssistantSchedule> dist = new CplexReschedule.TimeSlotDistance(20,3);
+			Distance<AssistantSchedule> dist = new CplexReschedule.TimeSlotDistance(1,9,3);
 			
 			CplexReschedule solver = new CplexReschedule(i, s, schedules, dist, true);
 			solver.solve();
