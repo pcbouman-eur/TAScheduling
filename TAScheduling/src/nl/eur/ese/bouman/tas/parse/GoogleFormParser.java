@@ -43,19 +43,8 @@ public class GoogleFormParser
 		System.out.println(i);
 		
 		CostInformation ci = CostInformation.getDefault();
-		BranchInformation bi = BranchInformation.getDefault();
-		
-		List<AssistantSchedule> schedules = new ArrayList<AssistantSchedule>();
-		
-		
-		for (Assistant a : i.getAssistants())
-		{
-			TASolver tas = new TASolver(i,a,bi);
-			tas.run();
-			List<AssistantSchedule> taSchedules = tas.getSchedules();
-			System.out.println(taSchedules.size()+" schedules for assistant "+a);
-			schedules.addAll(taSchedules);
-		}
+
+		List<AssistantSchedule> schedules = TASolver.findAllSchedules(i, true);
 
 		System.out.println("Total schedules : "+schedules.size());
 		

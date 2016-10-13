@@ -22,6 +22,11 @@ public class TASolver
 	private int maxSols;
 	private TreeSet<ScheduleNode> bestSols;
 
+	public TASolver(Instance i, Assistant as)
+	{
+		this(i, as, BranchInformation.getDefault());
+	}
+	
 	public TASolver(Instance i, Assistant as, BranchInformation bi)
 	{
 		this(i, as, bi, Integer.MAX_VALUE);
@@ -118,6 +123,24 @@ public class TASolver
 		}
 	}
 	
+	public static List<AssistantSchedule> findAllSchedules(Instance i, boolean log)
+	{
+		List<AssistantSchedule> schedules = new ArrayList<AssistantSchedule>();
+		
+		for (Assistant a : i.getAssistants())
+		{
+			TASolver tas = new TASolver(i,a);
+			tas.run();
+			List<AssistantSchedule> taSchedules = tas.getSchedules();
+			if (log)
+			{
+				System.out.println(taSchedules.size()+" schedules for assistant "+a);
+			}
+			schedules.addAll(taSchedules);
+		}
+		
+		return schedules;
+	}
 	
 	private static class ScheduleNode implements Comparable<ScheduleNode>
 	{
