@@ -30,8 +30,7 @@ public class CplexReschedule extends CplexSolver
 	{
 		super(i, as, integer);
 		this.original = org;
-		
-		init();
+		this.dist = dist;
 	}
 	
 	@Override

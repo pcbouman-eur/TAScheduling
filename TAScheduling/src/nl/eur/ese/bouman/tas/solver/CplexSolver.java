@@ -31,22 +31,28 @@ public class CplexSolver
 	private Map<IloRange,Session> sessionConstr;
 	private Map<IloRange,Assistant> assistantConstr;
 	
+	private boolean initialized;
+	
 	public CplexSolver(Instance i, List<AssistantSchedule> schedules, boolean binary) throws IloException
 	{
 		this.instance = i;
 		this.schedules = new ArrayList<>(schedules);
 		this.binary = binary;
-		init();
+		this.initialized = false;
 	}
 	
 	protected void init() throws IloException
 	{
-		model = new IloCplex();
-		
-		initVars();
-		initSessionConstraints();
-		initAssistantConstraints();
-		initObjective();
+		if (!initialized)
+		{
+			model = new IloCplex();
+			
+			initVars();
+			initSessionConstraints();
+			initAssistantConstraints();
+			initObjective();
+			initialized = true;
+		}
 	}
 	
 	protected void initVars() throws IloException
@@ -138,6 +144,7 @@ public class CplexSolver
 	
 	public void solve() throws IloException
 	{
+		init();
 		model.solve();
 	}
 	
